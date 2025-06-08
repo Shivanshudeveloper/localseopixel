@@ -104,6 +104,64 @@
         .catch(() => "NA"); // Return NA if IP service fails/blocked
     }
     
+    // Check if tracking data already exists in localStorage
+    function hasBeenTracked(ip, url, activity) {
+        try {
+            if (typeof Storage === "undefined") {
+                return false; // localStorage not supported
+            }
+            
+            const trackingKey = `tracking_${ip}_${url}_${activity}`;
+            const tracked = localStorage.getItem(trackingKey);
+            return tracked === "true";
+        } catch (error) {
+            console.warn("localStorage not accessible:", error.message);
+            return false; // If localStorage fails, proceed with tracking
+        }
+    }
+    
+    // Mark current visit as tracked
+    function markAsTracked(ip, url, activity) {
+        try {
+            if (typeof Storage !== "undefined") {
+                const trackingKey = `tracking_${ip}_${url}_${activity}`;
+                localStorage.setItem(trackingKey, "true");
+                
+                // Optional: Set expiration (24 hours)
+                const expirationKey = `tracking_exp_${ip}_${url}_${activity}`;
+                const expirationTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+                localStorage.setItem(expirationKey, expirationTime.toString());
+            }
+        } catch (error) {
+            console.warn("Could not save tracking state:", error.message);
+        }
+    }
+    
+    // Clean expired tracking entries
+    function cleanExpiredEntries() {
+        try {
+            if (typeof Storage === "undefined") return;
+            
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('tracking_exp_')) {
+                    const expirationTime = parseInt(localStorage.getItem(key) || "0");
+                    if (Date.now() > expirationTime) {
+                        keysToRemove.push(key);
+                        // Also remove the corresponding tracking key
+                        const trackingKey = key.replace('tracking_exp_', 'tracking_');
+                        keysToRemove.push(trackingKey);
+                    }
+                }
+            }
+            
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+        } catch (error) {
+            console.warn("Could not clean expired entries:", error.message);
+        }
+    }
+    
     // Create tracking data with safe getters
     function createTrackingData(ip) {
         const deviceInfo = getDeviceInfo();
@@ -122,7 +180,8 @@
             hasTouch: deviceInfo.hasTouch,
             language: deviceInfo.language,
             platform: deviceInfo.platform,
-            timezone: deviceInfo.timezone
+            timezone: deviceInfo.timezone,
+            activity: "WEBSITE_CLICKED"
         };
     }
     
@@ -183,5 +242,8 @@
         .catch(trackingError => {
             // Final fallback - even if tracking fails, don't break the page
             console.error("All tracking attempts failed:", trackingError.message);
+            
+            // Optional: You could send a minimal tracking request here
+            // or implement a retry mechanism
         });
 })();
