@@ -187,7 +187,7 @@
     
     // Send tracking data with error handling
     function sendTrackingData(trackingData) {
-        return fetch("http://localhost:8080/api/v1/service/track", {
+        return fetch("https://localseobackendapi-h7aefyghfzdpgyex.eastus-01.azurewebsites.net/api/v1/service/track", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(trackingData),
