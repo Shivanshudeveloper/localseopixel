@@ -227,23 +227,57 @@
     }
     
     // Main execution with comprehensive error handling
+    cleanExpiredEntries(); // Clean old entries first
+    
     getIPAddress()
         .then(ip => {
+            const currentUrl = safeGet(() => window.location.href);
+            const activity = "WEBSITE_CLICKED";
+            
+            // 🔍 Check if this combination has already been tracked
+            if (hasBeenTracked(ip, currentUrl, activity)) {
+                console.log("✋ Visit already tracked, skipping API request");
+                console.log(`📝 Key checked: tracking_${ip}_${currentUrl}_${activity}`);
+                return Promise.resolve({ message: "Already tracked", skipped: true });
+            }
+            
+            console.log("🆕 New visit detected, sending tracking data");
             const trackingData = createTrackingData(ip);
-            return sendTrackingData(trackingData);
+            return sendTrackingData(trackingData)
+                .then(result => {
+                    // ✅ Mark as tracked only after successful API call
+                    markAsTracked(ip, currentUrl, activity);
+                    console.log(`💾 Saved to localStorage: tracking_${ip}_${currentUrl}_${activity}`);
+                    return result;
+                });
         })
         .catch(ipError => {
             // If IP fetch fails, continue with tracking without IP
             console.warn("IP detection failed, continuing without IP:", ipError.message);
             
-            const trackingData = createTrackingData("NA");
-            return sendTrackingData(trackingData);
+            const currentUrl = safeGet(() => window.location.href);
+            const activity = "WEBSITE_CLICKED";
+            const fallbackIp = "NA";
+            
+            // 🔍 Check if this combination has already been tracked (with NA IP)
+            if (hasBeenTracked(fallbackIp, currentUrl, activity)) {
+                console.log("✋ Visit already tracked (no IP), skipping API request");
+                console.log(`📝 Key checked: tracking_${fallbackIp}_${currentUrl}_${activity}`);
+                return Promise.resolve({ message: "Already tracked without IP", skipped: true });
+            }
+            
+            console.log("🆕 New visit detected (no IP), sending tracking data");
+            const trackingData = createTrackingData(fallbackIp);
+            return sendTrackingData(trackingData)
+                .then(result => {
+                    // ✅ Mark as tracked only after successful API call
+                    markAsTracked(fallbackIp, currentUrl, activity);
+                    console.log(`💾 Saved to localStorage: tracking_${fallbackIp}_${currentUrl}_${activity}`);
+                    return result;
+                });
         })
         .catch(trackingError => {
             // Final fallback - even if tracking fails, don't break the page
             console.error("All tracking attempts failed:", trackingError.message);
-            
-            // Optional: You could send a minimal tracking request here
-            // or implement a retry mechanism
         });
 })();
