@@ -7,10 +7,64 @@
         return;
     }
     
+    // Device type detection function
+    function getDeviceType() {
+        const userAgent = navigator.userAgent.toLowerCase();
+        const screenWidth = window.screen.width;
+        const screenHeight = window.screen.height;
+        const maxDimension = Math.max(screenWidth, screenHeight);
+        const minDimension = Math.min(screenWidth, screenHeight);
+        
+        // Check for mobile devices
+        if (/mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
+            return 'Phone';
+        }
+        
+        // Check for tablets
+        if (/tablet|ipad|playbook|silk/i.test(userAgent)) {
+            return 'Tablet';
+        }
+        
+        // Additional tablet detection for Android tablets
+        if (/android/i.test(userAgent) && !/mobile/i.test(userAgent)) {
+            return 'Tablet';
+        }
+        
+        // Screen size based detection as fallback
+        if (maxDimension <= 768) {
+            return 'Phone';
+        } else if (maxDimension <= 1024 && minDimension <= 768) {
+            return 'Tablet';
+        }
+        
+        // Touch device detection for tablets
+        if ('ontouchstart' in window && maxDimension <= 1366) {
+            return 'Tablet';
+        }
+        
+        // Default to PC
+        return 'PC';
+    }
+    
+    // Get additional device info
+    function getDeviceInfo() {
+        return {
+            deviceType: getDeviceType(),
+            screenResolution: `${window.screen.width}x${window.screen.height}`,
+            viewportSize: `${window.innerWidth}x${window.innerHeight}`,
+            hasTouch: 'ontouchstart' in window,
+            language: navigator.language,
+            platform: navigator.platform,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        };
+    }
+    
     // Get IP address first
     fetch('https://api.ipify.org?format=json')
         .then(response => response.json())
         .then(data => {
+            const deviceInfo = getDeviceInfo();
+            
             const trackingData = {
                 domainId,
                 url: window.location.href,
@@ -18,7 +72,15 @@
                 title: document.title,
                 userAgent: navigator.userAgent,
                 timestamp: new Date().toISOString(),
-                ip: data.ip
+                ip: data.ip,
+                // Added device information
+                deviceType: deviceInfo.deviceType,
+                screenResolution: deviceInfo.screenResolution,
+                viewportSize: deviceInfo.viewportSize,
+                hasTouch: deviceInfo.hasTouch,
+                language: deviceInfo.language,
+                platform: deviceInfo.platform,
+                timezone: deviceInfo.timezone
             };
             
             // Enhanced fetch with proper error handling
@@ -65,6 +127,8 @@
         .catch(err => {
             console.error("Failed to get IP address:", err.message);
             
+            const deviceInfo = getDeviceInfo();
+            
             // Fallback: Send tracking data without IP
             const trackingDataNoIP = {
                 domainId,
@@ -73,7 +137,15 @@
                 title: document.title,
                 userAgent: navigator.userAgent,
                 timestamp: new Date().toISOString(),
-                ip: null
+                ip: null,
+                // Added device information
+                deviceType: deviceInfo.deviceType,
+                screenResolution: deviceInfo.screenResolution,
+                viewportSize: deviceInfo.viewportSize,
+                hasTouch: deviceInfo.hasTouch,
+                language: deviceInfo.language,
+                platform: deviceInfo.platform,
+                timezone: deviceInfo.timezone
             };
             
             fetch("http://localhost:8080/api/v1/service/track", {
@@ -100,4 +172,3 @@
             });
         });
 })();
-
