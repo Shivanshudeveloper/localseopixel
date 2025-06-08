@@ -15,6 +15,7 @@
                 domainId,
                 url: window.location.href,
                 referrer: document.referrer,
+                title: document.title,
                 userAgent: navigator.userAgent,
                 timestamp: new Date().toISOString(),
                 ip: data.ip
@@ -69,6 +70,7 @@
                 domainId,
                 url: window.location.href,
                 referrer: document.referrer,
+                title: document.title,
                 userAgent: navigator.userAgent,
                 timestamp: new Date().toISOString(),
                 ip: null
