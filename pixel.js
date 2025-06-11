@@ -17,6 +17,175 @@
         }
     }
     
+    // Enhanced referral tracking function
+    function getReferralInfo() {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const referrerUrl = document.referrer;
+            
+            // Initialize referral object
+            let referralInfo = {
+                referrer: referrerUrl || "direct",
+                source: "direct",
+                medium: "none",
+                campaign: "none",
+                platform: "direct",
+                utmSource: "none",
+                utmMedium: "none",
+                utmCampaign: "none",
+                utmContent: "none",
+                utmTerm: "none"
+            };
+            
+            // Check for UTM parameters first (highest priority)
+            if (urlParams.has('utm_source')) {
+                referralInfo.utmSource = urlParams.get('utm_source');
+                referralInfo.source = urlParams.get('utm_source');
+                referralInfo.medium = urlParams.get('utm_medium') || 'unknown';
+                referralInfo.campaign = urlParams.get('utm_campaign') || 'unknown';
+                referralInfo.utmMedium = urlParams.get('utm_medium') || 'none';
+                referralInfo.utmCampaign = urlParams.get('utm_campaign') || 'none';
+                referralInfo.utmContent = urlParams.get('utm_content') || 'none';
+                referralInfo.utmTerm = urlParams.get('utm_term') || 'none';
+                
+                // Determine platform from UTM source
+                referralInfo.platform = identifyPlatformFromSource(referralInfo.source);
+            }
+            // Check for other common referral parameters
+            else if (urlParams.has('ref')) {
+                referralInfo.source = urlParams.get('ref');
+                referralInfo.medium = 'referral';
+                referralInfo.platform = identifyPlatformFromSource(referralInfo.source);
+            }
+            else if (urlParams.has('source')) {
+                referralInfo.source = urlParams.get('source');
+                referralInfo.medium = 'referral';
+                referralInfo.platform = identifyPlatformFromSource(referralInfo.source);
+            }
+            // Parse referrer URL if available
+            else if (referrerUrl && referrerUrl !== '') {
+                const referralData = parseReferrerUrl(referrerUrl);
+                referralInfo.source = referralData.source;
+                referralInfo.medium = referralData.medium;
+                referralInfo.platform = referralData.platform;
+            }
+            
+            return referralInfo;
+            
+        } catch (error) {
+            console.warn("Error getting referral info:", error);
+            return {
+                referrer: "error",
+                source: "error",
+                medium: "error",
+                campaign: "error",
+                platform: "error",
+                utmSource: "error",
+                utmMedium: "error",
+                utmCampaign: "error",
+                utmContent: "error",
+                utmTerm: "error"
+            };
+        }
+    }
+    
+    // Function to identify platform from source parameter
+    function identifyPlatformFromSource(source) {
+        if (!source || source === 'none') return 'direct';
+        
+        const sourceLower = source.toLowerCase();
+        
+        // Social Media Platforms
+        if (sourceLower.includes('facebook') || sourceLower.includes('fb')) return 'Facebook';
+        if (sourceLower.includes('youtube') || sourceLower.includes('yt')) return 'YouTube';
+        if (sourceLower.includes('linkedin') || sourceLower.includes('li')) return 'LinkedIn';
+        if (sourceLower.includes('twitter') || sourceLower.includes('x.com')) return 'Twitter/X';
+        if (sourceLower.includes('instagram') || sourceLower.includes('ig')) return 'Instagram';
+        if (sourceLower.includes('tiktok')) return 'TikTok';
+        if (sourceLower.includes('pinterest')) return 'Pinterest';
+        if (sourceLower.includes('snapchat')) return 'Snapchat';
+        if (sourceLower.includes('reddit')) return 'Reddit';
+        if (sourceLower.includes('whatsapp')) return 'WhatsApp';
+        if (sourceLower.includes('telegram')) return 'Telegram';
+        
+        // Search Engines
+        if (sourceLower.includes('google')) return 'Google';
+        if (sourceLower.includes('bing')) return 'Bing';
+        if (sourceLower.includes('yahoo')) return 'Yahoo';
+        if (sourceLower.includes('duckduckgo')) return 'DuckDuckGo';
+        
+        // Email
+        if (sourceLower.includes('email') || sourceLower.includes('newsletter')) return 'Email';
+        
+        return sourceLower; // Return the source as platform if not recognized
+    }
+    
+    // Function to parse referrer URL and identify platform
+    function parseReferrerUrl(referrerUrl) {
+        try {
+            const url = new URL(referrerUrl);
+            const hostname = url.hostname.toLowerCase();
+            
+            // Social Media Platforms
+            if (hostname.includes('facebook.com') || hostname.includes('fb.com')) {
+                return { source: 'facebook', medium: 'social', platform: 'Facebook' };
+            }
+            if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+                return { source: 'youtube', medium: 'social', platform: 'YouTube' };
+            }
+            if (hostname.includes('linkedin.com')) {
+                return { source: 'linkedin', medium: 'social', platform: 'LinkedIn' };
+            }
+            if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
+                return { source: 'twitter', medium: 'social', platform: 'Twitter/X' };
+            }
+            if (hostname.includes('instagram.com')) {
+                return { source: 'instagram', medium: 'social', platform: 'Instagram' };
+            }
+            if (hostname.includes('tiktok.com')) {
+                return { source: 'tiktok', medium: 'social', platform: 'TikTok' };
+            }
+            if (hostname.includes('pinterest.com')) {
+                return { source: 'pinterest', medium: 'social', platform: 'Pinterest' };
+            }
+            if (hostname.includes('reddit.com')) {
+                return { source: 'reddit', medium: 'social', platform: 'Reddit' };
+            }
+            if (hostname.includes('snapchat.com')) {
+                return { source: 'snapchat', medium: 'social', platform: 'Snapchat' };
+            }
+            
+            // Search Engines
+            if (hostname.includes('google.com') || hostname.includes('google.')) {
+                return { source: 'google', medium: 'organic', platform: 'Google' };
+            }
+            if (hostname.includes('bing.com')) {
+                return { source: 'bing', medium: 'organic', platform: 'Bing' };
+            }
+            if (hostname.includes('yahoo.com')) {
+                return { source: 'yahoo', medium: 'organic', platform: 'Yahoo' };
+            }
+            if (hostname.includes('duckduckgo.com')) {
+                return { source: 'duckduckgo', medium: 'organic', platform: 'DuckDuckGo' };
+            }
+            
+            // Email platforms
+            if (hostname.includes('mail.') || hostname.includes('outlook.') || hostname.includes('gmail.')) {
+                return { source: 'email', medium: 'email', platform: 'Email' };
+            }
+            
+            // Generic referral
+            return { 
+                source: hostname, 
+                medium: 'referral', 
+                platform: hostname.replace('www.', '').split('.')[0] 
+            };
+            
+        } catch (error) {
+            return { source: 'unknown', medium: 'referral', platform: 'Unknown' };
+        }
+    }
+    
     // Device type detection function with error handling
     function getDeviceType() {
         try {
@@ -162,14 +331,15 @@
         }
     }
     
-    // Create tracking data with safe getters
+    // Create tracking data with enhanced referral info
     function createTrackingData(ip) {
         const deviceInfo = getDeviceInfo();
+        const referralInfo = getReferralInfo();
         
         return {
             domainId: domainId,
             url: safeGet(() => window.location.href),
-            referrer: safeGet(() => document.referrer),
+            referrer: referralInfo.referrer,
             title: safeGet(() => document.title),
             userAgent: safeGet(() => navigator.userAgent),
             timestamp: safeGet(() => new Date().toISOString()),
@@ -181,7 +351,8 @@
             language: deviceInfo.language,
             platform: deviceInfo.platform,
             timezone: deviceInfo.timezone,
-            activity: "WEBSITE_CLICKED"
+            activity: "WEBSITE_CLICKED",
+            referralInfo
         };
     }
     
@@ -243,6 +414,15 @@
             
             console.log("🆕 New visit detected, sending tracking data");
             const trackingData = createTrackingData(ip);
+            
+            // Log referral info for debugging
+            // console.log("📊 Referral Info:", {
+            //     platform: trackingData.referralPlatform,
+            //     source: trackingData.referralSource,
+            //     medium: trackingData.referralMedium,
+            //     campaign: trackingData.referralCampaign
+            // });
+            
             return sendTrackingData(trackingData)
                 .then(result => {
                     // ✅ Mark as tracked only after successful API call
@@ -268,6 +448,15 @@
             
             console.log("🆕 New visit detected (no IP), sending tracking data");
             const trackingData = createTrackingData(fallbackIp);
+            
+            // Log referral info for debugging
+            // console.log("📊 Referral Info:", {
+            //     platform: trackingData.referralPlatform,
+            //     source: trackingData.referralSource,
+            //     medium: trackingData.referralMedium,
+            //     campaign: trackingData.referralCampaign
+            // });
+            
             return sendTrackingData(trackingData)
                 .then(result => {
                     // ✅ Mark as tracked only after successful API call
