@@ -330,11 +330,25 @@
             console.warn("Could not clean expired entries:", error.message);
         }
     }
+
+
+    // Add this function to extract the 't' parameter
+    function getTParameter() {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tValue = urlParams.get('t');
+            return tValue ? tValue : 'NA';
+        } catch (error) {
+            return 'NA';
+        }
+    }
+
     
     // Create tracking data with enhanced referral info
     function createTrackingData(ip) {
         const deviceInfo = getDeviceInfo();
         const referralInfo = getReferralInfo();
+        const tParameter = getTParameter(); // Get the t parameter value
         
         return {
             domainId: domainId,
@@ -352,7 +366,8 @@
             platform: deviceInfo.platform,
             timezone: deviceInfo.timezone,
             activity: "WEBSITE_CLICKED",
-            referralInfo
+            referralInfo,
+            t: tParameter // Add the t parameter to tracking data
         };
     }
     
